@@ -76,6 +76,11 @@ td code{color:#9dc4ff;overflow-wrap:anywhere}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
 .subheading{font-size:12px;font-weight:750;margin:0 0 12px}
 .muted{color:var(--muted);font-size:11px;line-height:1.6}
+.containment-controls{display:grid;gap:10px}
+.containment-control{border:1px solid var(--line);border-radius:11px;padding:12px;background:#0d1726}
+.containment-control-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.containment-control-title{font-size:12px;font-weight:750}
+.containment-control-detail{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
 .footer{text-align:center;color:#64748b;font-size:10px;margin-top:40px;line-height:1.8}
 @media(max-width:760px){.top-grid,.two-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:34px 16px}.risk-panel{align-items:flex-start;flex-direction:column}header{padding:0 18px}}
 </style>
@@ -161,6 +166,12 @@ td code{color:#9dc4ff;overflow-wrap:anywhere}
         <pre class="log" id="evidenceOutput">Evidence will appear here.</pre>
       </div>
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="section-head"><h2>Sandbox Containment</h2><span class="badge blue" id="containmentStatus">Not verified</span></div>
+      <p class="muted" id="containmentSummary">Docker configuration verification will appear here after a sandbox run.</p>
+      <div class="containment-controls" id="containmentControls"></div>
+    </div>
   </section>
 
   <div class="footer">DRYRUN AI · KNOW WHAT YOUR PYTHON CODE DOES BEFORE YOU RUN IT<br>Experimental security analysis · Not a guarantee that code is safe</div>
@@ -228,7 +239,8 @@ function riskClass(value) {
 
 function statusClass(value) {
   const v = String(value || "").toLowerCase();
-  if (v.includes("blocked") || v.includes("failed") || v.includes("not_observed")) return "yellow";
+  if (v.includes("failed") || v.includes("not_observed")) return "yellow";
+  if (v.includes("unknown")) return "blue";
   if (v.includes("allowed") || v.includes("completed") || v.includes("captured") || v.includes("installed") || v.includes("confirmed")) return "green";
   return "blue";
 }
@@ -302,8 +314,71 @@ function displayReport(data) {
       limitations: comparison.limitations || []
     }, null, 2);
 
+  renderContainment(data.containment_report);
+
   document.getElementById("results").style.display = "block";
   document.getElementById("results").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function renderContainment(report) {
+  const status = document.getElementById("containmentStatus");
+  const summary = document.getElementById("containmentSummary");
+  const controls = document.getElementById("containmentControls");
+  controls.replaceChildren();
+
+  if (!report) {
+    status.textContent = "Not run";
+    status.className = "badge blue";
+    summary.textContent = "Containment was not verified because the sandbox did not run.";
+    return;
+  }
+
+  status.textContent = report.overall_status || "unknown";
+  status.className = "badge " + statusClass(report.overall_status);
+  summary.textContent =
+    "Verified: " + (report.verified_count ?? 0) +
+    " · Failed: " + (report.failed_count ?? 0) +
+    " · Unknown: " + (report.unknown_count ?? 0) +
+    ". Docker metadata verifies configuration only; it does not prove operations were blocked.";
+
+  const controlsList = Array.isArray(report.controls) ? report.controls : [];
+  controlsList.forEach(control => {
+    const card = document.createElement("div");
+    card.className = "containment-control";
+    const head = document.createElement("div");
+    head.className = "containment-control-head";
+    const title = document.createElement("span");
+    title.className = "containment-control-title";
+    title.textContent = control.control_id || "Unknown control";
+    const badge = document.createElement("span");
+    badge.className = "badge " + statusClass(control.status);
+    badge.textContent = control.status || "unknown";
+    head.append(title, badge);
+    const detail = document.createElement("div");
+    detail.className = "containment-control-detail";
+    detail.textContent =
+      "Expected: " + formatValue(control.expected_value) +
+      " · Actual: " + formatValue(control.actual_value) +
+      " · " + (control.explanation || "") +
+      " · Source: " + (control.evidence_source || "unknown");
+    card.append(head, detail);
+    controls.appendChild(card);
+  });
+
+  const limitations = Array.isArray(report.limitations) ? report.limitations : [];
+  if (limitations.length) {
+    const note = document.createElement("p");
+    note.className = "notice";
+    note.textContent = limitations.join(" ");
+    controls.appendChild(note);
+  }
+}
+
+function formatValue(value) {
+  if (value == null) return "unknown";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
 }
 
 analyzeButton.addEventListener("click", async () => {

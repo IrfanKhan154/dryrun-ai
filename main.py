@@ -127,6 +127,9 @@ async def analyze(
             "comparisons": report.get("prediction_comparisons", []),
             "limitations": report.get("limitations", []),
         }
+        containment = report.get("containment_report")
+        if pipeline.get("policy", {}).get("status") == "denied":
+            containment = None
         response = {
             "project": "DryRun AI",
             "analysis_status": (
@@ -143,6 +146,23 @@ async def analyze(
             "pipeline_stages": pipeline,
             "execution_scope": report.get("execution_scope"),
             "evidence_summary": report.get("evidence_summary", []),
+            "containment_report": containment,
+            "containment_status": (
+                containment.get("overall_status")
+                if isinstance(containment, dict) else None
+            ),
+            "containment_verified_count": (
+                containment.get("verified_count", 0)
+                if isinstance(containment, dict) else 0
+            ),
+            "containment_failed_count": (
+                containment.get("failed_count", 0)
+                if isinstance(containment, dict) else 0
+            ),
+            "containment_unknown_count": (
+                containment.get("unknown_count", 0)
+                if isinstance(containment, dict) else 0
+            ),
         }
 
         if overall_status == "completed":

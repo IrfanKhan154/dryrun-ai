@@ -3,6 +3,7 @@ import os
 import stat
 import unittest
 from unittest.mock import patch
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -25,6 +26,14 @@ REPORT = {
     },
     "sandbox_result": {"status": "success"},
     "evidence_summary": [],
+    "containment_report": {
+        "overall_status": "passed",
+        "verified_count": 9,
+        "failed_count": 0,
+        "unknown_count": 0,
+        "controls": [],
+        "limitations": [],
+    },
     "prediction_comparisons": [],
     "limitations": ["One sandbox run only."],
     "execution_scope": {
@@ -79,6 +88,9 @@ class MainApiTests(unittest.TestCase):
             "sandbox_execution", "comparison", "comparison_status",
             "run_id", "agent_plan", "policy_decision",
             "pipeline_stages", "execution_scope", "evidence_summary",
+            "containment_report", "containment_status",
+            "containment_verified_count", "containment_failed_count",
+            "containment_unknown_count",
         ):
             self.assertIn(field, data)
         pipeline.assert_called_once()
@@ -115,6 +127,7 @@ class MainApiTests(unittest.TestCase):
             response.json()["pipeline_stages"]["execution"]["status"],
             "skipped",
         )
+        self.assertIsNone(response.json()["containment_report"])
 
     def test_sandbox_infrastructure_failure(self):
         report = {
@@ -169,6 +182,15 @@ class MainApiTests(unittest.TestCase):
         chown.assert_called_once_with(staged_path, -1, 65534)
         chmod.assert_called_once_with(staged_path, 0o440)
         self.assertFalse(os.path.exists(staged_path))
+
+    def test_frontend_contains_containment_report_rendering(self):
+        frontend = (
+            Path(__file__).parent.parent / "static" / "index.html"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Sandbox Containment", frontend)
+        self.assertIn("renderContainment", frontend)
+        self.assertIn("textContent", frontend)
+        self.assertIn("containment_report", frontend)
 
 
 if __name__ == "__main__":

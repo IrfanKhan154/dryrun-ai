@@ -7,6 +7,7 @@ from agent_planner import create_agent_plan
 from agent_schemas import AgentPlan
 from ai_analyzer import analyze_python_code
 from comparison import compare_predictions
+from containment_lab import verify_containment
 from monitored_runner import run_sandbox
 from policy_engine import evaluate_plan
 
@@ -31,12 +32,14 @@ def _base_report(run_id: str) -> dict[str, Any]:
             "planning": _stage("pending"),
             "policy": _stage("pending"),
             "execution": _stage("pending"),
+            "containment": _stage("pending"),
             "comparison": _stage("pending"),
         },
         "ai_analysis": None,
         "agent_plan": None,
         "policy_decision": None,
         "sandbox_result": None,
+        "containment_report": None,
         "evidence_summary": [],
         "prediction_comparisons": [],
         "limitations": [],
@@ -68,7 +71,8 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
             "failed", _error_message(exc)
         )
         _skip_remaining(
-            report, ("planning", "policy", "execution", "comparison")
+            report,
+            ("planning", "policy", "execution", "containment", "comparison"),
         )
         report["limitations"].append("AI analysis did not complete.")
         return report
@@ -87,7 +91,9 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
         report["pipeline_stages"]["planning"] = _stage(
             "failed", _error_message(exc)
         )
-        _skip_remaining(report, ("policy", "execution", "comparison"))
+        _skip_remaining(
+            report, ("policy", "execution", "containment", "comparison")
+        )
         report["limitations"].append("AI test planning did not complete.")
         return report
 
@@ -101,7 +107,7 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
         report["pipeline_stages"]["policy"] = _stage(
             "failed", _error_message(exc)
         )
-        _skip_remaining(report, ("execution", "comparison"))
+        _skip_remaining(report, ("execution", "containment", "comparison"))
         report["limitations"].append("Policy validation did not complete.")
         return report
 
@@ -113,6 +119,7 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
 
     if policy.get("allowed") is not True:
         report["pipeline_stages"]["execution"] = _stage("skipped")
+        report["pipeline_stages"]["containment"] = _stage("skipped")
         report["pipeline_stages"]["comparison"] = _stage("skipped")
         report["limitations"].append(
             "Policy denial prevented sandbox execution."
@@ -146,6 +153,23 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
     )
 
     try:
+        report["containment_report"] = verify_containment(
+            sandbox_result.get("host_metadata"),
+            report["run_id"],
+        )
+        report["pipeline_stages"]["containment"] = _stage("completed")
+        report["limitations"].extend(
+            report["containment_report"].get("limitations", [])
+        )
+    except Exception as exc:
+        report["pipeline_stages"]["containment"] = _stage(
+            "failed", _error_message(exc)
+        )
+        report["limitations"].append(
+            "Containment verification did not complete."
+        )
+
+    try:
         comparison = compare_predictions(analysis, sandbox_result)
     except Exception as exc:
         report["pipeline_stages"]["comparison"] = _stage(
@@ -163,8 +187,13 @@ def run_agent_pipeline(source_code: str, script_path: str | Path) -> dict[str, A
         "and planned test cases were not individually executed."
     )
 
-    if execution_status == "success":
+    containment_passed = (
+        report.get("containment_report", {}).get("overall_status") == "passed"
+    )
+    if execution_status == "success" and containment_passed:
         report["overall_status"] = "completed"
+    elif execution_status == "success":
+        report["overall_status"] = "failed"
     else:
         report["overall_status"] = execution_status or "failed"
 

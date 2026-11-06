@@ -39,6 +39,18 @@ SANDBOX = {
     "exit_code": 0,
     "program_stdout": "done",
     "stderr": "",
+    "host_metadata": {
+        "available": True,
+        "network_mode": "none",
+        "readonly_rootfs": True,
+        "user": "65534:65534",
+        "cap_drop": ["ALL"],
+        "security_opt": ["no-new-privileges"],
+        "memory": 128 * 1024 * 1024,
+        "nano_cpus": 500_000_000,
+        "pids_limit": 64,
+        "privileged": False,
+    },
     "evidence": [{
         "source": "docker_engine",
         "trust_tier": "docker_engine_metadata",
@@ -87,6 +99,10 @@ class AgentOrchestratorTests(unittest.TestCase):
         self.assertEqual(result["pipeline_stages"]["planning"]["status"], "completed")
         self.assertEqual(result["pipeline_stages"]["policy"]["status"], "approved")
         self.assertEqual(result["pipeline_stages"]["execution"]["status"], "completed")
+        self.assertEqual(
+            result["pipeline_stages"]["containment"]["status"], "completed"
+        )
+        self.assertEqual(result["containment_report"]["overall_status"], "passed")
         self.assertEqual(result["pipeline_stages"]["comparison"]["status"], "completed")
 
     def test_analysis_failure_stops_pipeline(self):
@@ -179,6 +195,32 @@ class AgentOrchestratorTests(unittest.TestCase):
             run_agent_pipeline("source", "/server/staged.py")
 
         sandbox.assert_called_once_with("/server/staged.py")
+
+    def test_failed_containment_prevents_completed_status(self):
+        failed_metadata = {
+            **SANDBOX,
+            "host_metadata": {
+                **SANDBOX["host_metadata"],
+                "network_mode": "bridge",
+            },
+        }
+        with self.components(), patch(
+            "agent_orchestrator.run_sandbox", return_value=failed_metadata
+        ):
+            result = run_agent_pipeline("source", "/tmp/script.py")
+
+        self.assertEqual(result["containment_report"]["failed_count"], 1)
+        self.assertEqual(result["overall_status"], "failed")
+
+    def test_missing_metadata_is_unknown_and_not_completed(self):
+        with self.components(), patch(
+            "agent_orchestrator.run_sandbox",
+            return_value={**SANDBOX, "host_metadata": {"available": False}},
+        ):
+            result = run_agent_pipeline("source", "/tmp/script.py")
+
+        self.assertEqual(result["containment_report"]["unknown_count"], 9)
+        self.assertEqual(result["overall_status"], "failed")
 
 
 if __name__ == "__main__":
