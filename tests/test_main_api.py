@@ -1,8 +1,9 @@
 import io
 import os
 import stat
+import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -48,11 +49,22 @@ REPORT = {
 class MainApiTests(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
-        self.env = patch.dict(os.environ, {"DRYRUN_API_KEY": API_KEY}, clear=True)
+        self.database_directory = tempfile.TemporaryDirectory()
+        self.env = patch.dict(
+            os.environ,
+            {
+                "DRYRUN_API_KEY": API_KEY,
+                "DRYRUN_DB_PATH": os.path.join(
+                    self.database_directory.name, "test.sqlite3"
+                ),
+            },
+            clear=True,
+        )
         self.env.start()
 
     def tearDown(self):
         self.env.stop()
+        self.database_directory.cleanup()
 
     def post(self, content=b"print('x')", filename="sample.py", key=API_KEY):
         return self.client.post(
@@ -180,7 +192,10 @@ class MainApiTests(unittest.TestCase):
         staged_path = chown.call_args.args[0]
         self.assertEqual(os.path.dirname(staged_path), STAGING_DIR)
         chown.assert_called_once_with(staged_path, -1, 65534)
-        chmod.assert_called_once_with(staged_path, 0o440)
+        self.assertIn(
+            call(staged_path, 0o440),
+            chmod.call_args_list,
+        )
         self.assertFalse(os.path.exists(staged_path))
 
     def test_frontend_contains_containment_report_rendering(self):

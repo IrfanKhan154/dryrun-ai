@@ -6,10 +6,11 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from agent_orchestrator import run_agent_pipeline
+from database import get_run, list_runs, persist_run
 
 
 app = FastAPI(
@@ -119,6 +120,18 @@ async def analyze(
                 detail="Analysis service could not complete the request.",
             )
 
+        try:
+            persist_run(report, file.filename, content)
+        except Exception:
+            logging.exception(
+                "DryRun report persistence failed: run_id=%s",
+                report.get("run_id"),
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="Analysis history could not be saved.",
+            )
+
         pipeline = report.get("pipeline_stages", {})
         overall_status = report.get("overall_status")
         comparison_stage = pipeline.get("comparison", {})
@@ -189,3 +202,53 @@ async def analyze(
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
         await file.close()
+
+
+def _require_api_key(x_api_key: str) -> None:
+    expected_key = os.getenv("DRYRUN_API_KEY", "")
+    if not expected_key or not secrets.compare_digest(
+        x_api_key, expected_key
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key.",
+        )
+
+
+@app.get("/runs")
+def runs(
+    x_api_key: str = Header(default=""),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    _require_api_key(x_api_key)
+    try:
+        return {
+            "runs": list_runs(limit=limit, offset=offset),
+            "limit": limit,
+            "offset": offset,
+        }
+    except Exception:
+        logging.exception("Run history listing failed")
+        raise HTTPException(
+            status_code=503,
+            detail="Run history is temporarily unavailable.",
+        )
+
+
+@app.get("/runs/{run_id}")
+def run_detail(run_id: str, x_api_key: str = Header(default="")):
+    _require_api_key(x_api_key)
+    if len(run_id) > 100:
+        raise HTTPException(status_code=404, detail="Run not found.")
+    try:
+        result = get_run(run_id)
+    except Exception:
+        logging.exception("Run history lookup failed")
+        raise HTTPException(
+            status_code=503,
+            detail="Run history is temporarily unavailable.",
+        )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Run not found.")
+    return result
