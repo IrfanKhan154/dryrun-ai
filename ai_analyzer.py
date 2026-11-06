@@ -1,6 +1,9 @@
 import json
 import os
+
 import httpx
+
+from schemas import AIAnalysisReport
 
 
 VULTR_API_URL = "https://api.vultrinference.com/v1/chat/completions"
@@ -87,7 +90,7 @@ def analyze_python_code(source_code):
     response = httpx.post(
         VULTR_API_URL,
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": "Bearer " + api_key,
             "Content-Type": "application/json"
         },
         json=payload,
@@ -96,27 +99,37 @@ def analyze_python_code(source_code):
 
     response.raise_for_status()
 
-    result = response.json()
-    content = result["choices"][0]["message"]["content"]
+    try:
+        result = response.json()
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Vultr response was not valid JSON."
+        ) from exc
+
+    try:
+        content = result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise ValueError(
+            "Vultr response did not contain choices[0].message.content."
+        ) from exc
+
+    if not isinstance(content, str):
+        raise ValueError(
+            "Vultr response content must be a JSON string."
+        )
 
     try:
         report = json.loads(content)
-    except json.JSONDecodeError as exc:
+    except (json.JSONDecodeError, TypeError) as exc:
         raise ValueError(
             "AI returned invalid JSON. Analysis could not be parsed."
         ) from exc
 
-    if not isinstance(report, dict):
-        raise ValueError("AI report must be a JSON object.")
+    try:
+        validated_report = AIAnalysisReport.model_validate(report)
+    except ValueError as exc:
+        raise ValueError(
+            "AI response failed schema validation."
+        ) from exc
 
-    required_fields = {
-        "summary", "risk_level", "predictions", "limitations"
-    }
-
-    if not required_fields.issubset(report):
-        raise ValueError("AI report is missing required fields.")
-
-    if not isinstance(report["predictions"], list):
-        raise ValueError("AI predictions must be a list.")
-
-    return report
+    return validated_report.model_dump(mode="json")
