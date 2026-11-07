@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DryRun AI | Evidence-gated Python security</title>
+<link rel="stylesheet" href="/static/styles.css?v=20261107-report-contract">
+<script src="/static/app.js?v=20261107-report-contract" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">D</div><span>DryRun <em>AI</em></span></div>
+    <nav class="nav" aria-label="Primary">
+      <button class="active" data-nav="analyze" type="button" aria-current="page">Analyze</button>
+      <button data-nav="runs" type="button">Runs</button>
+      <button data-nav="containment" type="button">Containment Lab</button>
+      <button data-nav="reports" type="button">Reports</button>
+    </nav>
+    <p class="sidebar-note">Evidence-gated review for unfamiliar or AI-generated Python.</p>
+  </aside>
+  <div class="main">
+    <header class="topbar"><strong>Python security workspace</strong><span class="health" role="status" aria-live="polite"><i id="healthDot"></i><span id="healthText">Checking connection</span></span></header>
+    <main class="content">
+      <header class="page-head">
+        <div><div class="eyebrow">Pre-execution security</div><h1>Understand code before it runs.</h1><p>Inspect intent, enforce a fixed policy, execute once under containment, and see exactly what the evidence proves.</p></div>
+        <div class="actions"><button class="btn" id="newButton" type="button">New analysis</button><button class="btn" id="downloadButton" type="button" disabled>Export report</button></div>
+      </header>
+      <section id="analyzeView" data-page="analyze">
+        <section class="panel demo-panel" id="demoPanel" hidden>
+          <div class="panel-title"><div><h2>Demo samples</h2><p class="sub">Built-in samples use Vultr analysis and a fresh restricted sandbox run. Public demo results are shown in Reports and are not saved to shared history.</p></div></div>
+          <div class="row demo-controls"><div class="field"><label for="demoSample">Choose a sample</label><select id="demoSample" aria-describedby="demoSampleHelp" aria-label="Choose a demo sample"></select><p class="sample-help" id="demoSampleHelp">Each sample demonstrates one bounded behavior in a fresh sandbox run.</p></div><button class="btn primary" id="demoRunButton" type="button" aria-label="Run selected demo sample">Run sample</button></div>
+          <p class="status" id="demoStatus" role="status" aria-live="polite"></p>
+        </section>
+        <div class="analyze-grid">
+          <form class="panel" id="analysisForm">
+            <div class="panel-title"><div><h2>Analyze Python</h2><p class="sub">UTF-8 source only · 100 KB maximum · key held in memory</p></div><span class="badge">Server controlled</span></div>
+            <label class="drop" id="dropzone" for="fileInput" tabindex="0"><span><strong>Drop a .py file here or browse</strong><small>Source is previewed locally before submission.</small></span></label>
+            <input id="fileInput" type="file" accept=".py,text/x-python" aria-label="Choose a Python source file"><div class="file-meta" id="fileMeta">No file selected</div>
+            <pre class="source" id="sourcePreview" aria-label="Selected source preview">Select a Python file to preview its source.</pre>
+            <div class="field"><label for="objective">Analysis objective <span class="sub">(optional, max 500 characters)</span></label><textarea id="objective" maxlength="500" placeholder="Focus the review, for example: credential access and network behavior."></textarea></div>
+            <div class="field" id="apiKeyField"><label for="apiKey">Workspace API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Never persisted by this browser"></div>
+            <div class="field" id="accessCodeField" hidden><label for="accessCode">Upload access code</label><input id="accessCode" type="password" autocomplete="off" placeholder="Required for demo uploads"></div>
+            <p class="privacy">Submitted source is sent to the configured Vultr inference service for analysis. It is executed only after server-side policy approval in the fixed sandbox. The API key remains in browser memory.</p>
+            <div class="row"><button class="btn primary" id="analyzeButton" type="submit" disabled aria-describedby="statusLine">Analyze code</button><span class="status" id="statusLine" role="status" aria-live="polite">Ready when a Python file is selected.</span></div>
+          </form>
+          <section class="panel"><div class="panel-title"><div><h2>Execution policy</h2><p class="sub">Fixed by the server, not by the model or upload.</p></div></div>
+            <div class="policy-list"><div class="policy-item"><strong>Network</strong><span>Disabled · network mode none</span></div><div class="policy-item"><strong>Filesystem</strong><span>Read-only root filesystem · restricted /tmp</span></div><div class="policy-item"><strong>Identity</strong><span>UID/GID 65534:65534 · no privileges</span></div><div class="policy-item"><strong>Resources</strong><span>128 MB memory · 0.5 CPU · 64 processes</span></div><div class="policy-item"><strong>Timeout</strong><span>15 seconds · bounded output capture</span></div></div>
+            <p class="policy-note">AI planning can ask questions, but cannot provide Docker commands, images, mounts, environment variables, or paths.</p>
+            <div class="trace"><h3>Agent activity</h3><div class="trace-list" id="traceList"></div><div class="run-id"><span>Run ID</span><code id="runId">—</code></div></div>
+          </section>
+        </div>
+      </section>
+      <section class="report" id="report" data-page="report" aria-live="polite" hidden>
+        <div class="tabs" role="tablist" aria-label="Report sections"><button class="tab active" data-tab="overview" type="button" role="tab" aria-selected="true">Overview</button><button class="tab" data-tab="findings" type="button" role="tab" aria-selected="false">Findings</button><button class="tab" data-tab="containment" type="button" role="tab" aria-selected="false">Containment</button><button class="tab" data-tab="evidence" type="button" role="tab" aria-selected="false">Evidence</button><button class="tab" data-tab="raw" type="button" role="tab" aria-selected="false">Raw Output</button></div>
+        <section class="tab-panel active" data-panel="overview" role="tabpanel"><div class="overview"><section class="panel summary-card"><div class="panel-title"><div><h2>Run summary</h2><p class="sub">A concise view of what the agent found, what ran, and what remains unknown.</p></div><span class="badge" id="outcomeBadge">Not available</span></div><div class="outcome"><div><div class="eyebrow">AI-estimated risk</div><div class="risk" id="riskValue">Not available</div></div><p class="summary" id="riskSummary">No report loaded.</p></div><div class="metrics"><div class="metric"><small>Outcome</small><strong id="summaryOutcome">Not available</strong></div><div class="metric"><small>Predictions</small><strong id="predictionMetric">0</strong></div><div class="metric"><small>Confirmed findings</small><strong id="confirmedMetric">0</strong></div><div class="metric"><small>Exit code</small><strong id="summaryExitCode">Not available</strong></div><div class="metric"><small>Duration</small><strong id="durationMetric">Not available</strong></div><div class="metric"><small>Docker checks</small><strong id="containmentMetric">Not run</strong></div><div class="metric"><small>Behavioral probes</small><strong id="probeMetric">Not available</strong></div></div><p class="summary-disclaimer">Behavior in this run was observed but this is not a safety certification.</p><p class="notice" id="limitationSummary">Results reflect one bounded sandbox run and available host evidence only.</p></section><section class="panel"><h3>Run details</h3><div class="meta-grid"><div class="meta-item"><small>Run ID</small><code id="overviewRunId">—</code></div><div class="meta-item"><small>Source SHA-256</small><code id="sourceHash">Not available</code></div><div class="meta-item"><small>Objective</small><span id="objectiveValue">Not available</span></div><div class="meta-item"><small>Source size</small><span id="sizeMetric">Not available</span></div><div class="meta-item"><small>Execution scope</small><span id="scopeValue">Not available</span></div></div></section></div><section class="panel trace-panel"><div class="panel-title"><div><h2>What the agent did</h2><p class="sub">A completed stage describes work performed, not a verified security finding.</p></div></div><div class="trace-list" id="reportTrace"></div><p class="notice" id="executionSummary">The program did not run in the sandbox.</p></section></section>
+        <section class="tab-panel" data-panel="findings" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>AI assessment: What the agent discovered</h2><p class="sub">Predictions are model estimates, not confirmed findings.</p></div></div><div class="finding-list" id="findingList"></div><h3>What the comparison established</h3><div class="comparison-list" id="comparisonList"></div><p class="notice">No observed behavior is proof that the submitted program is safe. Independent operation-level telemetry is limited.</p></section></section>
+        <section class="tab-panel" data-panel="containment" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>Sandbox configuration checks</h2><p class="sub" id="containmentSummary">No sandbox configuration report was produced for this run.</p></div><div class="actions"><button class="btn primary" id="runProbesButton" type="button">Run probes</button><span class="badge not-run" id="containmentStatus">Not run</span></div></div><div class="probe-results" id="probeResults"><p class="empty">Run the benign containment probes to collect host-side results.</p></div><div class="control-grid" id="controlGrid"></div><p class="notice" id="containmentLimitations"></p></section></section>
+        <section class="tab-panel" data-panel="evidence" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>Evidence</h2><p class="sub">Traceable records collected by the host or reported by the submitted program.</p></div></div><div class="evidence-list" id="evidenceList"></div><p class="notice">Configuration checks do not prove that individual file, network, or process operations were blocked.</p></section></section>
+        <section class="tab-panel" data-panel="raw" role="tabpanel"><section class="panel execution-panel"><h2>Sandbox execution</h2><div class="meta-grid"><div class="meta-item"><small>Exit code</small><span id="executionExitCode">Not available</span></div><div class="meta-item"><small>Execution duration</small><span id="executionDuration">Not available</span></div><div class="meta-item"><small>OOM status</small><span id="executionOom">Not available</span></div><div class="meta-item"><small>Container lifecycle</small><span id="executionLifecycle">Not available</span></div><div class="meta-item"><small>Cleanup status</small><span id="executionCleanup">Not available</span></div></div><h3>Planned test cases</h3><p class="notice" data-planned-note>0 planned cases, 1 sandbox run. Planned questions are not separate executions.</p><ol id="plannedTests" class="planned-tests"></ol><details><summary>Host metadata</summary><pre class="log" id="hostMetadata">Not available.</pre></details></section><div class="raw"><details class="panel"><summary>Program stdout</summary><pre class="log" id="stdoutOutput">Not available.</pre></details><details class="panel"><summary>Program stderr</summary><pre class="log" id="stderrOutput">Not available.</pre></details></div></section>
+      </section>
+      <section class="history" id="historyView" data-page="runs" hidden><header class="history-head"><div><div class="eyebrow">Persistent evidence ledger</div><h2>Run history</h2><p class="sub">Authenticated records · newest first · source code is never stored.</p></div><div class="history-tools"><input id="historySearch" type="search" placeholder="Search filename or run ID" aria-label="Search run history"><button class="btn" id="refreshHistory" type="button">Refresh</button></div></header><div class="history-layout"><section class="panel"><div id="historyList" class="history-list"><div class="empty" id="historyEmpty">Shared history requires a workspace API key. Public demo results are shown inline and are not saved.</div></div><div class="pagination"><button class="btn" id="prevPage" type="button">Previous</button><span id="pageLabel">Page 1</span><button class="btn" id="nextPage" type="button">Next</button></div></section><section class="panel history-detail"><h3>Selected run</h3><p class="sub" id="historyDetailText">Select a saved analysis to inspect its report data.</p><pre class="log" id="historyDetail">No run selected.</pre></section></div></section>
+      <footer class="footer">DRYRUN AI · EVIDENCE-GATED PRE-EXECUTION SECURITY · NOT A GUARANTEE THAT CODE IS SAFE</footer>
+    </main>
+  </div>
+</div>
+</body>
+</html>
