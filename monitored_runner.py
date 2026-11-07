@@ -45,7 +45,21 @@ def inspect_container(container_name, duration_seconds):
         result = subprocess.run(
             [
                 "docker", "inspect",
-                "--format", "{{json .State}}",
+                "--format",
+                (
+                    "{\"state\":{{json .State}},"
+                    "\"network_mode\":{{json .HostConfig.NetworkMode}},"
+                    "\"readonly_rootfs\":{{json .HostConfig.ReadonlyRootfs}},"
+                    "\"user\":{{json .Config.User}},"
+                    "\"cap_drop\":{{json .HostConfig.CapDrop}},"
+                    "\"security_opt\":{{json .HostConfig.SecurityOpt}},"
+                    "\"memory\":{{json .HostConfig.Memory}},"
+                    "\"nano_cpus\":{{json .HostConfig.NanoCpus}},"
+                    "\"pids_limit\":{{json .HostConfig.PidsLimit}},"
+                    "\"privileged\":{{json .HostConfig.Privileged}},"
+                    "\"image_id\":{{json .Image}},"
+                    "\"image_reference\":{{json .Config.Image}}}"
+                ),
                 container_name
             ],
             capture_output=True,
@@ -60,7 +74,14 @@ def inspect_container(container_name, duration_seconds):
                 "reason": "container_inspection_failed"
             }
 
-        state = json.loads(result.stdout)
+        inspected = json.loads(result.stdout)
+        state = inspected.get("state")
+        if not isinstance(state, dict):
+            raise json.JSONDecodeError(
+                "Docker state metadata is missing",
+                result.stdout,
+                0
+            )
 
         return {
             "available": True,
@@ -73,7 +94,18 @@ def inspect_container(container_name, duration_seconds):
             "started_at": state.get("StartedAt"),
             "finished_at": state.get("FinishedAt"),
             "error": state.get("Error") or None,
-            "duration_seconds": round(duration_seconds, 3)
+            "duration_seconds": round(duration_seconds, 3),
+            "network_mode": inspected.get("network_mode"),
+            "readonly_rootfs": inspected.get("readonly_rootfs"),
+            "user": inspected.get("user"),
+            "cap_drop": inspected.get("cap_drop"),
+            "security_opt": inspected.get("security_opt"),
+            "memory": inspected.get("memory"),
+            "nano_cpus": inspected.get("nano_cpus"),
+            "pids_limit": inspected.get("pids_limit"),
+            "privileged": inspected.get("privileged"),
+            "image_id": inspected.get("image_id"),
+            "image_reference": inspected.get("image_reference"),
         }
 
     except (
