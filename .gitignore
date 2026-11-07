@@ -17,6 +17,9 @@ __pycache__/
 
 # Runtime files
 *.log
+*.db
+*.sqlite
+*.sqlite3
 .pytest_cache/
 .coverage
 htmlcov/

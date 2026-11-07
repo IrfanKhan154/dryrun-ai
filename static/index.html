@@ -1,345 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DryRun AI | Python Risk Intelligence</title>
-<style>
-:root {
-  --bg:#090d18; --panel:#111827; --panel2:#151f30;
-  --line:#253248; --text:#eef3ff; --muted:#91a0b8;
-  --blue:#6d9cff; --cyan:#56d5e8; --green:#48d6a0;
-  --yellow:#f5c66b; --red:#ff7585;
-}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1b3154 0%,var(--bg) 55%);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh}
-header{height:76px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 5%;background:#0b1220cc}
-.brand{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:750;letter-spacing:-.5px}
-.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5289ff,#42d9d0);display:grid;place-items:center;color:#07111e;font-weight:900;font-size:20px}
-.brand span{color:var(--blue)}
-.header-right{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:9px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
-main{max-width:1160px;margin:0 auto;padding:48px 24px 70px}
-.eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
-h1{font-size:clamp(32px,5vw,49px);letter-spacing:-1.8px;margin:13px 0 12px;line-height:1.12}
-h1 em{font-style:normal;color:var(--blue)}
-.subtitle{color:var(--muted);font-size:15px;line-height:1.7;max-width:680px;margin:0}
-.top-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;margin-top:35px}
-.card{background:linear-gradient(145deg,#141f30,#101827);border:1px solid var(--line);border-radius:17px;padding:23px;box-shadow:0 18px 45px #0002}
-.card-title{font-size:14px;font-weight:750;margin:0 0 7px}
-.card-desc{font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 19px}
-.dropzone{border:1px dashed #49648a;border-radius:13px;min-height:170px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;background:#0c1524;cursor:pointer;transition:.2s}
-.dropzone:hover,.dropzone.drag{border-color:var(--cyan);background:#102136}
-.upload-icon{font-size:30px;margin-bottom:12px;color:var(--cyan)}
-.dropzone strong{font-size:14px}
-.dropzone small{color:var(--muted);font-size:11px;margin-top:8px}
-#fileInput{display:none}
-.file-name{font-size:12px;color:var(--cyan);margin-top:12px;min-height:16px;overflow-wrap:anywhere}
-.field-label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin:16px 0 7px}
-input[type=password]{width:100%;background:#0b1422;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--text);outline:none}
-input:focus{border-color:var(--blue)}
-button{border:0;border-radius:10px;padding:13px 18px;font-weight:750;cursor:pointer;transition:.2s}
-.primary{width:100%;margin-top:16px;color:#07111d;background:linear-gradient(110deg,#72a2ff,#58d9df);font-size:13px}
-.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
-button:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.notice{font-size:10px;color:var(--muted);line-height:1.6;margin-top:12px}
-.steps{display:grid;gap:17px;margin-top:20px}
-.step{display:flex;align-items:flex-start;gap:13px}
-.step-icon{width:32px;height:32px;flex:0 0 32px;border-radius:9px;background:#1b2b44;color:var(--cyan);display:grid;place-items:center;font-size:13px;font-weight:800}
-.step strong{font-size:12px;display:block;margin:2px 0 4px}
-.step p{font-size:11px;color:var(--muted);margin:0;line-height:1.5}
-.status-line{display:none;margin-top:15px;font-size:12px;color:var(--cyan)}
-.error{color:var(--red)!important}
-#results{display:none;margin-top:28px}
-.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px}
-.section-head h2{font-size:19px;letter-spacing:-.4px;margin:0}
-.pill{font-size:10px;border:1px solid var(--line);border-radius:30px;padding:6px 10px;color:var(--muted)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.stat{background:#111b2b;border:1px solid var(--line);border-radius:13px;padding:17px}
-.stat small{display:block;font-size:10px;color:var(--muted);margin-bottom:10px}
-.stat strong{font-size:23px;letter-spacing:-.5px}
-.risk-panel{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:16px}
-.risk-title{font-size:11px;color:var(--muted);margin-bottom:8px}
-.risk-value{font-size:22px;font-weight:800;text-transform:uppercase}
-.risk-description{font-size:12px;color:var(--muted);line-height:1.6;max-width:700px}
-.badge{display:inline-block;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:750;background:#263247;color:#b7c5dc;white-space:nowrap}
-.green{background:#12372e;color:var(--green)}
-.yellow{background:#42351e;color:var(--yellow)}
-.red{background:#46242c;color:var(--red)}
-.blue{background:#1c3152;color:#9fc0ff}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:11px;min-width:620px}
-th{text-align:left;color:var(--muted);font-size:10px;font-weight:700;padding:12px;border-bottom:1px solid var(--line)}
-td{padding:13px 12px;border-bottom:1px solid #202c3e;vertical-align:top}
-td code{color:#9dc4ff;overflow-wrap:anywhere}
-.log{background:#080e18;border:1px solid var(--line);border-radius:11px;padding:15px;color:#b8c8df;font:11px/1.7 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
-.subheading{font-size:12px;font-weight:750;margin:0 0 12px}
-.muted{color:var(--muted);font-size:11px;line-height:1.6}
-.footer{text-align:center;color:#64748b;font-size:10px;margin-top:40px;line-height:1.8}
-@media(max-width:760px){.top-grid,.two-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:34px 16px}.risk-panel{align-items:flex-start;flex-direction:column}header{padding:0 18px}}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DryRun AI | Evidence-gated Python security</title>
+<link rel="stylesheet" href="/static/styles.css?v=20261107-report-contract">
+<script src="/static/app.js?v=20261107-report-contract" defer></script>
 </head>
 <body>
-<header>
-  <div class="brand"><div class="logo">D</div>DryRun <span>AI</span></div>
-  <div class="header-right"><span class="dot"></span> Analysis platform</div>
-</header>
-
-<main>
-  <div class="eyebrow">Python risk intelligence</div>
-  <h1>Know before you <em>run.</em></h1>
-  <p class="subtitle">Understand what unfamiliar Python code intends to do, execute it in an isolated Docker sandbox, and compare AI predictions with available, clearly labelled evidence.</p>
-
-  <div class="top-grid">
-    <section class="card">
-      <h3 class="card-title">Analyze a Python file</h3>
-      <p class="card-desc">Upload a Python script for AI-powered inspection and isolated execution.</p>
-
-      <label class="dropzone" id="dropzone" for="fileInput">
-        <div class="upload-icon">↥</div>
-        <strong>Drop your Python file here</strong>
-        <small>or click to browse · .py files · maximum 100 KB</small>
-        <div class="file-name" id="fileName">No file selected</div>
-      </label>
-      <input type="file" id="fileInput" accept=".py,text/x-python">
-
-      <label class="field-label" for="apiKey">DryRun API key</label>
-      <input type="password" id="apiKey" autocomplete="off" placeholder="Enter your API key for this session">
-      <button class="primary" id="analyzeButton" disabled>Analyze Python code →</button>
-      <div class="status-line" id="statusLine">Preparing analysis...</div>
-      <p class="notice">Your API key is used only for this browser session. It is not written into this page or browser storage. Use the SSH tunnel during testing.</p>
-    </section>
-
-    <section class="card">
-      <h3 class="card-title">How DryRun works</h3>
-      <p class="card-desc">Four stages separate AI predictions from available evidence.</p>
-      <div class="steps">
-        <div class="step"><div class="step-icon">01</div><div><strong>AI prediction</strong><p>Vultr-hosted AI inspects the source and predicts potentially important behaviour.</p></div></div>
-        <div class="step"><div class="step-icon">02</div><div><strong>Isolated execution</strong><p>Docker runs the script with restricted resources and no network access. It still shares the host kernel.</p></div></div>
-        <div class="step"><div class="step-icon">03</div><div><strong>Evidence collection</strong><p>Capture program output. Event and outcome markers printed by submitted code are treated as untrusted.</p></div></div>
-        <div class="step"><div class="step-icon">04</div><div><strong>AI vs Available Evidence</strong><p>Compare predictions with available output and identify operations not independently verified.</p></div></div>
-      </div>
-    </section>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">D</div><span>DryRun <em>AI</em></span></div>
+    <nav class="nav" aria-label="Primary">
+      <button class="active" data-nav="analyze" type="button" aria-current="page">Analyze</button>
+      <button data-nav="runs" type="button">Runs</button>
+      <button data-nav="containment" type="button">Containment Lab</button>
+      <button data-nav="reports" type="button">Reports</button>
+    </nav>
+    <p class="sidebar-note">Evidence-gated review for unfamiliar or AI-generated Python.</p>
+  </aside>
+  <div class="main">
+    <header class="topbar"><strong>Python security workspace</strong><span class="health" role="status" aria-live="polite"><i id="healthDot"></i><span id="healthText">Checking connection</span></span></header>
+    <main class="content">
+      <header class="page-head">
+        <div><div class="eyebrow">Pre-execution security</div><h1>Understand code before it runs.</h1><p>Inspect intent, enforce a fixed policy, execute once under containment, and see exactly what the evidence proves.</p></div>
+        <div class="actions"><button class="btn" id="newButton" type="button">New analysis</button><button class="btn" id="downloadButton" type="button" disabled>Export report</button></div>
+      </header>
+      <section id="analyzeView" data-page="analyze">
+        <section class="panel demo-panel" id="demoPanel" hidden>
+          <div class="panel-title"><div><h2>Demo samples</h2><p class="sub">Built-in samples use Vultr analysis and a fresh restricted sandbox run. Public demo results are shown in Reports and are not saved to shared history.</p></div></div>
+          <div class="row demo-controls"><div class="field"><label for="demoSample">Choose a sample</label><select id="demoSample" aria-describedby="demoSampleHelp" aria-label="Choose a demo sample"></select><p class="sample-help" id="demoSampleHelp">Each sample demonstrates one bounded behavior in a fresh sandbox run.</p></div><button class="btn primary" id="demoRunButton" type="button" aria-label="Run selected demo sample">Run sample</button></div>
+          <p class="status" id="demoStatus" role="status" aria-live="polite"></p>
+        </section>
+        <div class="analyze-grid">
+          <form class="panel" id="analysisForm">
+            <div class="panel-title"><div><h2>Analyze Python</h2><p class="sub">UTF-8 source only · 100 KB maximum · key held in memory</p></div><span class="badge">Server controlled</span></div>
+            <label class="drop" id="dropzone" for="fileInput" tabindex="0"><span><strong>Drop a .py file here or browse</strong><small>Source is previewed locally before submission.</small></span></label>
+            <input id="fileInput" type="file" accept=".py,text/x-python" aria-label="Choose a Python source file"><div class="file-meta" id="fileMeta">No file selected</div>
+            <pre class="source" id="sourcePreview" aria-label="Selected source preview">Select a Python file to preview its source.</pre>
+            <div class="field"><label for="objective">Analysis objective <span class="sub">(optional, max 500 characters)</span></label><textarea id="objective" maxlength="500" placeholder="Focus the review, for example: credential access and network behavior."></textarea></div>
+            <div class="field" id="apiKeyField"><label for="apiKey">Workspace API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Never persisted by this browser"></div>
+            <div class="field" id="accessCodeField" hidden><label for="accessCode">Upload access code</label><input id="accessCode" type="password" autocomplete="off" placeholder="Required for demo uploads"></div>
+            <p class="privacy">Submitted source is sent to the configured Vultr inference service for analysis. It is executed only after server-side policy approval in the fixed sandbox. The API key remains in browser memory.</p>
+            <div class="row"><button class="btn primary" id="analyzeButton" type="submit" disabled aria-describedby="statusLine">Analyze code</button><span class="status" id="statusLine" role="status" aria-live="polite">Ready when a Python file is selected.</span></div>
+          </form>
+          <section class="panel"><div class="panel-title"><div><h2>Execution policy</h2><p class="sub">Fixed by the server, not by the model or upload.</p></div></div>
+            <div class="policy-list"><div class="policy-item"><strong>Network</strong><span>Disabled · network mode none</span></div><div class="policy-item"><strong>Filesystem</strong><span>Read-only root filesystem · restricted /tmp</span></div><div class="policy-item"><strong>Identity</strong><span>UID/GID 65534:65534 · no privileges</span></div><div class="policy-item"><strong>Resources</strong><span>128 MB memory · 0.5 CPU · 64 processes</span></div><div class="policy-item"><strong>Timeout</strong><span>15 seconds · bounded output capture</span></div></div>
+            <p class="policy-note">AI planning can ask questions, but cannot provide Docker commands, images, mounts, environment variables, or paths.</p>
+            <div class="trace"><h3>Agent activity</h3><div class="trace-list" id="traceList"></div><div class="run-id"><span>Run ID</span><code id="runId">—</code></div></div>
+          </section>
+        </div>
+      </section>
+      <section class="report" id="report" data-page="report" aria-live="polite" hidden>
+        <div class="tabs" role="tablist" aria-label="Report sections"><button class="tab active" data-tab="overview" type="button" role="tab" aria-selected="true">Overview</button><button class="tab" data-tab="findings" type="button" role="tab" aria-selected="false">Findings</button><button class="tab" data-tab="containment" type="button" role="tab" aria-selected="false">Containment</button><button class="tab" data-tab="evidence" type="button" role="tab" aria-selected="false">Evidence</button><button class="tab" data-tab="raw" type="button" role="tab" aria-selected="false">Raw Output</button></div>
+        <section class="tab-panel active" data-panel="overview" role="tabpanel"><div class="overview"><section class="panel summary-card"><div class="panel-title"><div><h2>Run summary</h2><p class="sub">A concise view of what the agent found, what ran, and what remains unknown.</p></div><span class="badge" id="outcomeBadge">Not available</span></div><div class="outcome"><div><div class="eyebrow">AI-estimated risk</div><div class="risk" id="riskValue">Not available</div></div><p class="summary" id="riskSummary">No report loaded.</p></div><div class="metrics"><div class="metric"><small>Outcome</small><strong id="summaryOutcome">Not available</strong></div><div class="metric"><small>Predictions</small><strong id="predictionMetric">0</strong></div><div class="metric"><small>Confirmed findings</small><strong id="confirmedMetric">0</strong></div><div class="metric"><small>Exit code</small><strong id="summaryExitCode">Not available</strong></div><div class="metric"><small>Duration</small><strong id="durationMetric">Not available</strong></div><div class="metric"><small>Docker checks</small><strong id="containmentMetric">Not run</strong></div><div class="metric"><small>Behavioral probes</small><strong id="probeMetric">Not available</strong></div></div><p class="summary-disclaimer">Behavior in this run was observed but this is not a safety certification.</p><p class="notice" id="limitationSummary">Results reflect one bounded sandbox run and available host evidence only.</p></section><section class="panel"><h3>Run details</h3><div class="meta-grid"><div class="meta-item"><small>Run ID</small><code id="overviewRunId">—</code></div><div class="meta-item"><small>Source SHA-256</small><code id="sourceHash">Not available</code></div><div class="meta-item"><small>Objective</small><span id="objectiveValue">Not available</span></div><div class="meta-item"><small>Source size</small><span id="sizeMetric">Not available</span></div><div class="meta-item"><small>Execution scope</small><span id="scopeValue">Not available</span></div></div></section></div><section class="panel trace-panel"><div class="panel-title"><div><h2>What the agent did</h2><p class="sub">A completed stage describes work performed, not a verified security finding.</p></div></div><div class="trace-list" id="reportTrace"></div><p class="notice" id="executionSummary">The program did not run in the sandbox.</p></section></section>
+        <section class="tab-panel" data-panel="findings" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>AI assessment: What the agent discovered</h2><p class="sub">Predictions are model estimates, not confirmed findings.</p></div></div><div class="finding-list" id="findingList"></div><h3>What the comparison established</h3><div class="comparison-list" id="comparisonList"></div><p class="notice">No observed behavior is proof that the submitted program is safe. Independent operation-level telemetry is limited.</p></section></section>
+        <section class="tab-panel" data-panel="containment" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>Sandbox configuration checks</h2><p class="sub" id="containmentSummary">No sandbox configuration report was produced for this run.</p></div><div class="actions"><button class="btn primary" id="runProbesButton" type="button">Run probes</button><span class="badge not-run" id="containmentStatus">Not run</span></div></div><div class="probe-results" id="probeResults"><p class="empty">Run the benign containment probes to collect host-side results.</p></div><div class="control-grid" id="controlGrid"></div><p class="notice" id="containmentLimitations"></p></section></section>
+        <section class="tab-panel" data-panel="evidence" role="tabpanel"><section class="panel"><div class="panel-title"><div><h2>Evidence</h2><p class="sub">Traceable records collected by the host or reported by the submitted program.</p></div></div><div class="evidence-list" id="evidenceList"></div><p class="notice">Configuration checks do not prove that individual file, network, or process operations were blocked.</p></section></section>
+        <section class="tab-panel" data-panel="raw" role="tabpanel"><section class="panel execution-panel"><h2>Sandbox execution</h2><div class="meta-grid"><div class="meta-item"><small>Exit code</small><span id="executionExitCode">Not available</span></div><div class="meta-item"><small>Execution duration</small><span id="executionDuration">Not available</span></div><div class="meta-item"><small>OOM status</small><span id="executionOom">Not available</span></div><div class="meta-item"><small>Container lifecycle</small><span id="executionLifecycle">Not available</span></div><div class="meta-item"><small>Cleanup status</small><span id="executionCleanup">Not available</span></div></div><h3>Planned test cases</h3><p class="notice" data-planned-note>0 planned cases, 1 sandbox run. Planned questions are not separate executions.</p><ol id="plannedTests" class="planned-tests"></ol><details><summary>Host metadata</summary><pre class="log" id="hostMetadata">Not available.</pre></details></section><div class="raw"><details class="panel"><summary>Program stdout</summary><pre class="log" id="stdoutOutput">Not available.</pre></details><details class="panel"><summary>Program stderr</summary><pre class="log" id="stderrOutput">Not available.</pre></details></div></section>
+      </section>
+      <section class="history" id="historyView" data-page="runs" hidden><header class="history-head"><div><div class="eyebrow">Persistent evidence ledger</div><h2>Run history</h2><p class="sub">Authenticated records · newest first · source code is never stored.</p></div><div class="history-tools"><input id="historySearch" type="search" placeholder="Search filename or run ID" aria-label="Search run history"><button class="btn" id="refreshHistory" type="button">Refresh</button></div></header><div class="history-layout"><section class="panel"><div id="historyList" class="history-list"><div class="empty" id="historyEmpty">Shared history requires a workspace API key. Public demo results are shown inline and are not saved.</div></div><div class="pagination"><button class="btn" id="prevPage" type="button">Previous</button><span id="pageLabel">Page 1</span><button class="btn" id="nextPage" type="button">Next</button></div></section><section class="panel history-detail"><h3>Selected run</h3><p class="sub" id="historyDetailText">Select a saved analysis to inspect its report data.</p><pre class="log" id="historyDetail">No run selected.</pre></section></div></section>
+      <footer class="footer">DRYRUN AI · EVIDENCE-GATED PRE-EXECUTION SECURITY · NOT A GUARANTEE THAT CODE IS SAFE</footer>
+    </main>
   </div>
-
-  <section id="results">
-    <div class="section-head"><h2>Analysis report</h2><span class="pill" id="reportStatus">Completed</span></div>
-
-    <div class="stats">
-      <div class="stat"><small>AI predictions</small><strong id="predictionCount">0</strong></div>
-      <div class="stat"><small>Comparisons</small><strong id="comparisonCount">0</strong></div>
-      <div class="stat"><small>Trusted observations</small><strong id="eventCount">0</strong></div>
-      <div class="stat"><small>Unverified predictions</small><strong id="unexpectedCount">0</strong></div>
-    </div>
-
-    <div class="card risk-panel">
-      <div><div class="risk-title">AI risk assessment</div><div class="risk-value" id="riskValue">Not available</div></div>
-      <div class="risk-description" id="riskSummary">The AI summary will appear here.</div>
-    </div>
-
-    <div class="card">
-      <div class="section-head"><h2>AI vs Available Evidence</h2><span class="badge blue">Limited evidence</span></div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Predicted operation</th><th>Target</th><th>Risk</th><th>AI confidence</th><th>Evidence status</th></tr></thead>
-        <tbody id="comparisonRows"><tr><td colspan="5">No report yet.</td></tr></tbody></table>
-      </div>
-      <p class="notice">Submitted-program event markers are untrusted. Independent host-side file, process, and network telemetry is not currently implemented.</p>
-    </div>
-
-    <div class="two-col">
-      <div class="card">
-        <h3 class="subheading">Sandbox execution</h3>
-        <p class="muted" id="executionMeta">Execution details will appear here.</p>
-        <h4 class="subheading">Program output</h4>
-        <pre class="log" id="programOutput">No output yet.</pre>
-        <h4 class="subheading" style="margin-top:16px">Error output</h4>
-        <pre class="log" id="errorOutput">No errors reported.</pre>
-      </div>
-      <div class="card">
-        <h3 class="subheading">Evidence integrity and limitations</h3>
-        <pre class="log" id="evidenceOutput">Evidence will appear here.</pre>
-      </div>
-    </div>
-  </section>
-
-  <div class="footer">DRYRUN AI · KNOW WHAT YOUR PYTHON CODE DOES BEFORE YOU RUN IT<br>Experimental security analysis · Not a guarantee that code is safe</div>
-</main>
-
-<script>
-const fileInput = document.getElementById("fileInput");
-const apiKeyInput = document.getElementById("apiKey");
-const analyzeButton = document.getElementById("analyzeButton");
-const fileName = document.getElementById("fileName");
-const dropzone = document.getElementById("dropzone");
-const statusLine = document.getElementById("statusLine");
-let selectedFile = null;
-
-function updateButton() {
-  analyzeButton.disabled = !selectedFile || !apiKeyInput.value.trim();
-}
-
-function selectFile(file) {
-  if (!file) return;
-  if (!file.name.toLowerCase().endsWith(".py")) {
-    statusLine.textContent = "Please select a .py Python file.";
-    statusLine.className = "status-line error";
-    return;
-  }
-  if (file.size > 100 * 1024) {
-    statusLine.textContent = "File exceeds the 100 KB limit.";
-    statusLine.className = "status-line error";
-    return;
-  }
-  selectedFile = file;
-  fileName.textContent = file.name + " · " + file.size.toLocaleString() + " bytes";
-  statusLine.textContent = "";
-  statusLine.className = "status-line";
-  updateButton();
-}
-
-fileInput.addEventListener("change", () => selectFile(fileInput.files[0]));
-apiKeyInput.addEventListener("input", updateButton);
-
-dropzone.addEventListener("dragover", event => {
-  event.preventDefault();
-  dropzone.classList.add("drag");
-});
-dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
-dropzone.addEventListener("drop", event => {
-  event.preventDefault();
-  dropzone.classList.remove("drag");
-  selectFile(event.dataTransfer.files[0]);
-});
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  })[ch]);
-}
-
-function riskClass(value) {
-  const v = String(value || "").toLowerCase();
-  if (v.includes("high") || v.includes("critical")) return "red";
-  if (v.includes("medium")) return "yellow";
-  if (v.includes("low")) return "green";
-  return "blue";
-}
-
-function statusClass(value) {
-  const v = String(value || "").toLowerCase();
-  if (v.includes("blocked") || v.includes("failed") || v.includes("not_observed")) return "yellow";
-  if (v.includes("allowed") || v.includes("completed") || v.includes("captured") || v.includes("installed") || v.includes("confirmed")) return "green";
-  return "blue";
-}
-
-function displayReport(data) {
-  const ai = data.ai_predictions || {};
-  const sandbox = data.sandbox_execution || {};
-  const comparison = data.comparison || {};
-  const predictions = Array.isArray(ai.predictions) ? ai.predictions : [];
-  const comparisons = Array.isArray(comparison.comparisons) ? comparison.comparisons : [];
-  const observations = Array.isArray(sandbox.observations) ? sandbox.observations : [];
-  const unexpected = Array.isArray(comparison.observed_but_not_predicted) ? comparison.observed_but_not_predicted : [];
-
-  document.getElementById("predictionCount").textContent = predictions.length;
-  document.getElementById("comparisonCount").textContent = comparisons.length;
-  document.getElementById("eventCount").textContent = observations.length;
-  const unverified = comparisons.filter(
-    item => item.status === "predicted_not_observed"
-  );
-  document.getElementById("unexpectedCount").textContent = unverified.length;
-
-  const risk = ai.risk_level || "Not available";
-  const riskValue = document.getElementById("riskValue");
-  riskValue.textContent = risk;
-  riskValue.style.color = riskClass(risk) === "red" ? "var(--red)" :
-    riskClass(risk) === "yellow" ? "var(--yellow)" :
-    riskClass(risk) === "green" ? "var(--green)" : "var(--blue)";
-
-  document.getElementById("riskSummary").textContent = ai.summary || "No AI summary was returned.";
-  document.getElementById("reportStatus").textContent =
-    "Analysis " + (data.analysis_status || "returned") + " · Comparison " + (data.comparison_status || "unknown");
-
-  const rows = document.getElementById("comparisonRows");
-  if (!comparisons.length) {
-    rows.innerHTML = '<tr><td colspan="5">No comparable predictions were returned.</td></tr>';
-  } else {
-    rows.innerHTML = comparisons.map(item => {
-      const confidence = item.ai_confidence;
-      const confidenceText = confidence == null ? "—" :
-        (Number(confidence) <= 1 ? (Number(confidence) * 100).toFixed(0) + "%" : confidence + "%");
-      const actual = item.actual_outcome || item.status || "Not observed";
-      return `<tr>
-        <td>${escapeHtml(item.operation)}</td>
-        <td><code>${escapeHtml(item.target)}</code></td>
-        <td><span class="badge ${riskClass(item.predicted_risk)}">${escapeHtml(item.predicted_risk || "Unknown")}</span></td>
-        <td>${escapeHtml(confidenceText)}</td>
-        <td><span class="badge ${statusClass(actual)}">${escapeHtml(actual)}</span><br><span class="muted">${escapeHtml(item.status || "")}</span></td>
-      </tr>`;
-    }).join("");
-  }
-
-  document.getElementById("executionMeta").textContent =
-    "Sandbox status: " + (sandbox.status || "unknown") +
-    " · Exit code: " + (sandbox.exit_code == null ? "—" : sandbox.exit_code);
-
-  document.getElementById("programOutput").textContent =
-    sandbox.program_stdout ?? sandbox.stdout ?? "No program output captured.";
-  document.getElementById("errorOutput").textContent =
-    sandbox.stderr || "No errors reported.";
-
-  document.getElementById("evidenceOutput").textContent =
-    JSON.stringify({
-      evidence_integrity: sandbox.evidence_integrity || {
-        status: "not_reported"
-      },
-      runner_evidence: sandbox.evidence || [],
-      observations: observations,
-      execution_outcomes: sandbox.execution_outcomes || [],
-      unverified_predictions: unverified,
-      observed_but_not_predicted: unexpected,
-      limitations: comparison.limitations || []
-    }, null, 2);
-
-  document.getElementById("results").style.display = "block";
-  document.getElementById("results").scrollIntoView({behavior:"smooth", block:"start"});
-}
-
-analyzeButton.addEventListener("click", async () => {
-  if (!selectedFile || !apiKeyInput.value.trim()) return;
-
-  analyzeButton.disabled = true;
-  analyzeButton.textContent = "Analyzing...";
-  statusLine.textContent = "AI prediction and isolated execution are in progress...";
-  statusLine.className = "status-line";
-  document.getElementById("results").style.display = "none";
-
-  try {
-    const form = new FormData();
-    form.append("file", selectedFile);
-
-    const response = await fetch("/analyze", {
-      method: "POST",
-      headers: {"X-API-Key": apiKeyInput.value},
-      body: form
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.detail || "Analysis request failed.");
-    }
-
-    displayReport(data);
-    statusLine.textContent = "Analysis completed successfully.";
-  } catch (error) {
-    statusLine.textContent = error.message || "Unable to complete analysis.";
-    statusLine.className = "status-line error";
-  } finally {
-    analyzeButton.textContent = "Analyze Python code →";
-    updateButton();
-  }
-});
-</script>
+</div>
 </body>
 </html>
